@@ -8,17 +8,19 @@ This library is a software implementing a quantum-inspired approach and compares
 
 # Basic Installation procedure 
 * The library require NLopt (version 2.7.1), a .tar.gz archive of NLopt is inside the library
-1) Install Nlopt in nlopt_install folder
-  1.1) Uncompress Nlopt library : `tar -xzf nlopt-2.7.1.tar.gz`
-  1.2) Move in nlopt-2.7.1 folder : `cd nlopt-2.7.1` 
-  1.3) Compile nlopt and install it : 
-      `cmake .`
-      `make -j` 
-      `cmake --install . --prefix ${PATH_TO_CURRENT_FOLDER}/nlopt_install`
-2) Library installation 
-  2.1) Get back in the root folder `cd ..`
-  2.2) cmake . 
-  2.3) make -j 
+1) Install Nlopt in nlopt_install folder <p>
+  1.1) Uncompress Nlopt library :  <p>
+  `tar -xzf nlopt-2.7.1.tar.gz` <p>
+  1.2) Move in nlopt-2.7.1 folder : <p>
+   `cd nlopt-2.7.1`  <p>
+  1.3) Compile nlopt and install it :  <p>
+      `cmake .` <p>
+      `make -j` <p>
+      `cmake --install . --prefix ${PATH_TO_CURRENT_FOLDER}/nlopt_install` <p>
+3) Library installation  <p>
+  2.1) Get back in the root folder <p> `cd ..` <p>
+  2.2)  `cmake . `  <p>
+  2.3)  `make -j `  <p>
 
 The binary file QUANTUM_BNP should be created at the root folder of the library.
 
@@ -35,11 +37,11 @@ To see the link between smart charging problems and the two problems solved by t
 - Exact 1 : implementation of the SEWELL method introduced in [1].
 - Exact 2 : solves the corresponding Integer Linear Program with CPLEX
 
-To activate those liraries you need to activate the corresponding QB_ENABLE_ option of the library and to change the corresponding set environnement line, the corresponding lines are between line 14 and 18 of the CMakeList : 
-  option(QB_ENABLE_SCIP "Use of SCIP library" OFF)
-  set(SCIP_DIR YOU_PATH_TO_SCIP)
-  option(QP_ENABLE_CPLEX "Use of CPLEX solver"	OFF)
-  set(ENV{CPLEX_ROOT} YOU_PATH_TO_CPLEX)
+To activate those liraries you need to activate the corresponding QB_ENABLE_ option of the library and to change the corresponding set environnement line, the corresponding lines are between line 14 and 18 of the CMakeList : <p> <p>
+  option(QB_ENABLE_SCIP "Use of SCIP library" OFF)<p>
+  set(SCIP_DIR YOU_PATH_TO_SCIP)<p>
+  option(QP_ENABLE_CPLEX "Use of CPLEX solver"	OFF)<p>
+  set(ENV{CPLEX_ROOT} YOU_PATH_TO_CPLEX)<p>
 
 ## Version 
 * SCIP (version 8.0.2)
@@ -53,12 +55,41 @@ To activate those liraries you need to activate the corresponding QB_ENABLE_ opt
 
 
 # Library test
-The program receives in input from 2 to 3 arguments.
- *Quantum_BnP -solved_problem -instance_file (optional) -method*
+The program receives in input from 2 to 3 arguments.<p>
+  `Quantum_BnP -solved_problem -instance_file (optional) -method`
 
-* *-solved_problem* indicates if we solve the graph coloring ( *-COLORING* ) or the Maximum Weighted Independent Set problem ( *-MWIS* )
-* *-instace_file* describes the instance in the DIMACS format (node indexes start at 1):
-  General graph data
+* **solved_problem** indicates if we solve the graph coloring ( *-COLORING* ) or the Maximum Weighted Independent Set problem ( *-MWIS* )
+* **instance_file** describes the instance in the DIMACS format (node indexes start at 1):
+* **method**: for the MWIS problem specifies which exact or heuristic method should be called. Possible values are *-CPLEX* and *-sewell* (for exact methods) and *-greedy* or *-quantum* for heuristics
+
+The program outputs in the standard output:
+* For the MWIS problem - The set that was found by the specified method
+* For the graph coloring problem - the color assingment and the RQAOA success rate
+
+# Examples :
+## For the *Maximum Independent Set* problem:
+
+ `QUANTUM_BNP -MWIS test_data/graphs_100/GNP_0.5.mwis -quantum` <p>
+
+The expected (probabilistic) output is: <p>
+
+MWIS is independent: 1 <p>
+-quantum returned an independent set of value: 9 <p>
+The set is: 13 27 32 34 56 63 88 94 99 <p>
+
+## For the *Coloring* problem you need to activate SCIP : <p> 
+`QUANTUM_BNP -COLORING test_data/graphs_20/GNP_0.5.mwis` <p>
+The expected output is: <p>
+Branch & Price found a coloring with 6 colors.  <p>
+RQAOA success rate is: 1  <p>
+COLORING: 0 3 1 5 2 4 3 5 4 5 1 2 5 1 0 2 4 2 0 2  <p>
+
+The folder test_data contains simple graphs of different node number and density. 
+Each folder *graphs_n* in test_data contains graphs with *n* nodes. 
+Files *GNP_0.d.mwis* are randomly generated instances with density *d*.
+
+
+# General graph data
   * p #nodes #edges
   
   The list of the edges:
@@ -72,35 +103,6 @@ The program receives in input from 2 to 3 arguments.
   * n n weight
   * c ... May be used in any line for comments
   * If the line starts with any other character than c, p, e and n the execution is aborted
-* *-method*: for the MWIS problem specifies which exact or heuristic method should be called. Possible values are *-CPLEX* and *-sewell* (for exact methods) and *-greedy* or *-quantum* for heuristics
-
-The program outputs in the standard output:
-* For the MWIS problem - The set that was found by the specified method
-* For the graph coloring problem - the color assingment and the RQAOA success rate
-
-# Examples :
-
-## For the *Maximum Independent Set* problem: "QUANTUM_BNP -MWIS test_data/graphs_100/GNP_0.5.mwis -quantum". 
-The expected (probabilistic) output is:
-
-&nbsp;&nbsp;&nbsp;&nbsp; MWIS is independent: 1
-
-&nbsp;&nbsp;&nbsp;&nbsp; -quantum returned an independent set of value: 9
-
-&nbsp;&nbsp;&nbsp;&nbsp; The set is: 13 27 32 34 56 63 88 94 99
-
-## For the *Coloring* problem you need to activate SCIP : "QUANTUM_BNP -COLORING test_data/graphs_20/GNP_0.5.mwis". 
-The expected output is:
-
-&nbsp;&nbsp;&nbsp;&nbsp; Branch & Price found a coloring with 6 colors.
-
-&nbsp;&nbsp;&nbsp;&nbsp; RQAOA success rate is: 1
-
-&nbsp;&nbsp;&nbsp;&nbsp; COLORING: 0 3 1 5 2 4 3 5 4 5 1 2 5 1 0 2 4 2 0 2
-
-The folder test_data contains simple graphs of different node number and density. 
-Each folder *graphs_n* in test_data contains graphs with *n* nodes. 
-Files *GNP_0.d.mwis* are randomly generated instances with density *d*.
 
 # AKNOWLEDGEMENTS AND BIBLIOGRAPHY
 This project has received funding from the European Union’s Horizon 2020 research and innovation programme under grant agreement No 951821.
