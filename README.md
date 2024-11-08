@@ -105,7 +105,7 @@ Files *GNP_0.d.mwis* are randomly generated instances with density *d*.
   * If the line starts with any other character than c, p, e and n the execution is aborted
 
 # AKNOWLEDGEMENTS AND BIBLIOGRAPHY
-This project has received funding from the European Union’s Horizon 2020 research and innovation programme under grant agreement No 951821.
+**This project has received funding from the European Union’s Horizon 2020 research and innovation programme under grant agreement No 951821.**
 
 [1] https://www.math.uwaterloo.ca/~bico/papers/safe_color.pdf
 
