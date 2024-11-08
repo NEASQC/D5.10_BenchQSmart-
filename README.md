@@ -1,74 +1,114 @@
-# NEASQC lib template
+# Benchmarking suite for smart charging : NEASQC WP 5.10 
 
-This repository is a template for NEASQC libraries.
+This readme correspond to the benchmarking suite for smart charging problems studied in the [NEASQC](https://neasqc.eu/) developped during the PhD work of Margarita Veshchezerova : Quantum algorithms for the [energy management optimization problems](https://theses.hal.science/tel-04105922/) [3]. 
 
-## Licence
+This library is a software implementing a quantum-inspired approach and compares it to classical approaches. 
 
-The `LICENCE` file contains the default licence statement as specified in the proposal and partner agreement.
+**This program allows to compute the Maximum Weighted Independed Set in a graph and the Graph Coloring.**
 
-## Building and installing
+# Basic Installation procedure 
+* The library require NLopt (version 2.7.1), a .tar.gz archive of NLopt is inside the library
+1) Install Nlopt in nlopt_install folder
+  1.1) Uncompress Nlopt library : `tar -xzf nlopt-2.7.1.tar.gz`
+  1.2) Move in nlopt-2.7.1 folder : `cd nlopt-2.7.1` 
+  1.3) Compile nlopt and install it : 
+      `cmake .`
+      `make -j` 
+      `cmake --install . --prefix ${PATH_TO_CURRENT_FOLDER}/nlopt_install`
+2) Library installation 
+  2.1) Get back in the root folder `cd ..`
+  2.2) cmake . 
+  2.3) make -j 
 
-For simplicity, an example of `setup.py` file is provided in this template.
-Feel free to modify it if you have exotic build recipes.
+The binary file QUANTUM_BNP should be created at the root folder of the library.
+
+## The library implement two heuristics for Maximum Weighted Independent Set :
+- Heuristic 1 : greedy initialization from [1] enhanced with a local search [2]. 
+- Heuristic 2 : firstly optimize the corresponding energy Hamiltonian with the hybrid quantum routine **RQAOA** [4] to further improve the obtained assignment with the local search [2]. 
+
+Remark : Due to the parameter optimization routine the quantum heurisic is probabilistic, so the result may change between executions. If the quantum heuristic is not working very well, it may be due to the suboptimal values of parameters. In this case modify the macros MAX_OPT_TIME in Hamiltonian.cpp (initially set to 5).
+
+To see the link between smart charging problems and the two problems solved by the library we refer to [3]. 
+
+# Additional library installation 
+## Optionnaly The library implement two exact methods for Maximum Weighted Independent Set but which might require advance settings :
+- Exact 1 : implementation of the SEWELL method introduced in [1].
+- Exact 2 : solves the corresponding Integer Linear Program with CPLEX
+
+To activate those liraries you need to activate the corresponding QB_ENABLE_ option of the library and to change the corresponding set environnement line, the corresponding lines are between line 14 and 18 of the CMakeList : 
+  option(QB_ENABLE_SCIP "Use of SCIP library" OFF)
+  set(SCIP_DIR YOU_PATH_TO_SCIP)
+  option(QP_ENABLE_CPLEX "Use of CPLEX solver"	OFF)
+  set(ENV{CPLEX_ROOT} YOU_PATH_TO_CPLEX)
+
+## Version 
+* SCIP (version 8.0.2)
+* cplex (version 12.7)
 
 
-## Coding conventions
 
-In order to simplify the coding conventions, we provide a pylint.rc file in `misc/pylint.rc`.
-This will allow you to easily check your naming conventions and various other aspects.
-This is not a strict guidline, as pylint can be quite pedantic sometimes (but also very helpful).
+## The graph coloring solution is computed with the **Quantum-assisted Branch & Price** [3].
+  The Branch & Price procedure is implemented using SCIP library (version 8.0.0). The branching is done with *Ryan-Foster rule*. 
+  The coloring procedure stops either when the optimal coloring is found or after the TIMELIMIT (specified at line 41 of the coloring.cpp file) seconds. 
 
-A few remarks:
-- pylint can be integrated in most editors (and we strongly advise you to)
-- running pylint on several source files in one go can find errors such as circular imports or code duplication:
 
-```bash
-python -m pylint --rcfile=./misc/pylint.rc <my_source_dir>
-```
-or
+# Library test
+The program receives in input from 2 to 3 arguments.
+ *Quantum_BnP -solved_problem -instance_file (optional) -method*
 
-```bash
-pylint --rcfile=./misc/pylint.rc <my_source_dir>
-```
+* *-solved_problem* indicates if we solve the graph coloring ( *-COLORING* ) or the Maximum Weighted Independent Set problem ( *-MWIS* )
+* *-instace_file* describes the instance in the DIMACS format (node indexes start at 1):
+  General graph data
+  * p #nodes #edges
+  
+  The list of the edges:
+  * e u v 
+  * ...
+  * e u v
+  
+  The list of node weights (if not provided every node is assigned the weight 1)
+  * n 1 weight
+  * ...
+  * n n weight
+  * c ... May be used in any line for comments
+  * If the line starts with any other character than c, p, e and n the execution is aborted
+* *-method*: for the MWIS problem specifies which exact or heuristic method should be called. Possible values are *-CPLEX* and *-sewell* (for exact methods) and *-greedy* or *-quantum* for heuristics
 
-depending on how you installed pylint.
+The program outputs in the standard output:
+* For the MWIS problem - The set that was found by the specified method
+* For the graph coloring problem - the color assingment and the RQAOA success rate
 
-## Testing and continuous integration
+# Examples :
 
-In order to uniformise the continuous integration process across libraries, we will assume that:
-- all the tests related to your library are compatible with pytest
-- there exists a 'test' recipe in the `setup.py` file
+## For the *Maximum Independent Set* problem: "QUANTUM_BNP -MWIS test_data/graphs_100/GNP_0.5.mwis -quantum". 
+The expected (probabilistic) output is:
 
-The default test recipe (in this template) simply calls pytest on the full repository.
-Pytest detects:
-- any file that starts with test\_ (e.g test\_my\_class.py)
-- inside these files, any function that starts test\_
-- any class that starts with Test
+&nbsp;&nbsp;&nbsp;&nbsp; MWIS is independent: 1
 
-You can run it with:
+&nbsp;&nbsp;&nbsp;&nbsp; -quantum returned an independent set of value: 9
 
-```bash
-python setup.py test
-```
+&nbsp;&nbsp;&nbsp;&nbsp; The set is: 13 27 32 34 56 63 88 94 99
 
-This way, you can write tests either right next to the corresponding code (convenient) or in a `tests` folder at the root of the repository.
+## For the *Coloring* problem you need to activate SCIP : "QUANTUM_BNP -COLORING test_data/graphs_20/GNP_0.5.mwis". 
+The expected output is:
 
-If you are not familiar with unit testing and you feel that it's too much for your project, that's fine.
-The bare minimum would be to include some run examples wrapped in test functions (functional tests).
+&nbsp;&nbsp;&nbsp;&nbsp; Branch & Price found a coloring with 6 colors.
 
-Remark that in this template, the same tests are in my\_lib/test\_my\_lib.py and tests/test\_my\_lib.py.
+&nbsp;&nbsp;&nbsp;&nbsp; RQAOA success rate is: 1
 
-## GitHub CI
-This repository contains a GitHub Workflow file that will automatically run pytest when changes are pushed.  
-Details on disabling and enabling this feature can be found [here](https://docs.github.com/en/enterprise-server@3.0/actions/managing-workflow-runs/disabling-and-enabling-a-workflow).
+&nbsp;&nbsp;&nbsp;&nbsp; COLORING: 0 3 1 5 2 4 3 5 4 5 1 2 5 1 0 2 4 2 0 2
 
-## Documentation
-Customize the GitHub Workflow YAML file: *repo_name*/.github/workflow/sphinx\_doc.yml
-There is a basic index.rst template under 'doc'. Modify it as you want.
+The folder test_data contains simple graphs of different node number and density. 
+Each folder *graphs_n* in test_data contains graphs with *n* nodes. 
+Files *GNP_0.d.mwis* are randomly generated instances with density *d*.
 
-Any modification under the folder 'doc' pushed to GitHub will trigger a rebuild of the documentation (using GitHub CI).
-If the build is successful, then the resulting html documentation can be access at: https://neasqc.github.io/repo_name
+# AKNOWLEDGEMENTS AND BIBLIOGRAPHY
+This project has received funding from the European Union’s Horizon 2020 research and innovation programme under grant agreement No 951821.
 
-Notes: 
-  - You can follow the build process on the 'Actions' tab below the name of the repository.
-  - neasqc.github.io does not immediately update. You may need to wait a minute or two before it see the changes.
+[1] https://www.math.uwaterloo.ca/~bico/papers/safe_color.pdf
+
+[2] https://www.researchgate.net/publication/221131653_Fast_Local_Search_for_the_Maximum_Independent_Set_Problem
+
+[3] Veshchezerova, M. (2022). Quantum algorithms for energy management optimization problems. Theses, Université de Lorraine, December.
+
+[4] Bravyi et al., 2020 Sergey Bravyi, Alexander Kliesch, Robert Koenig, and Eugene Tang. Obstacles to variational quantum optimization from symmetry protection. Phys. Rev. Lett., 125:260505, Dec 2020.
